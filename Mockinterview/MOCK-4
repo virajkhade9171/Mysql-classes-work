@@ -1,0 +1,253 @@
+-- Q1. Create a new database
+CREATE DATABASE GroceryShopDB;
+USE GroceryShopDB;
+
+-- Q2. Create tables
+CREATE TABLE Customers (
+    CustomerID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Email VARCHAR(100) UNIQUE,
+    Phone VARCHAR(15),
+    City VARCHAR(50),
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Products (
+    ProductID INT AUTO_INCREMENT PRIMARY KEY,
+    ProductName VARCHAR(100) NOT NULL,
+    Category VARCHAR(50),
+    Price DECIMAL(10,2) CHECK (Price >= 0),
+    StockQty INT DEFAULT 0
+);
+
+CREATE TABLE Suppliers (
+    SupplierID INT AUTO_INCREMENT PRIMARY KEY,
+    SupplierName VARCHAR(100),
+    ContactName VARCHAR(100),
+    Phone VARCHAR(15),
+    City VARCHAR(50)
+);
+
+CREATE TABLE Orders (
+    OrderID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT,
+    OrderDate DATE DEFAULT (CURRENT_DATE),
+    TotalAmount DECIMAL(10,2),
+    Status VARCHAR(50),
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+);
+
+CREATE TABLE OrderItems (
+    OrderItemID INT AUTO_INCREMENT PRIMARY KEY,
+    OrderID INT,
+    ProductID INT,
+    Quantity INT CHECK (Quantity > 0),
+    SubTotal DECIMAL(10,2),
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
+    FOREIGN KEY (ProductID) REFERENCES Products(ProductID)
+);
+
+-- Q3. (Keys already added above)
+
+-- Q4. Add new column
+ALTER TABLE Products ADD COLUMN Discount DECIMAL(5,2);
+
+-- Q5. Drop Discount column
+ALTER TABLE Products DROP COLUMN Discount;
+
+-- Q6. Insert sample data
+INSERT INTO Customers (Name, Email, Phone, City) VALUES
+('Suresh Kumar', 'suresh@gmail.com', '9876543210', 'Delhi'),
+('Rohit Sharma', 'rohit@gmail.com', '9856473210', 'Mumbai'),
+('Priya Singh', 'priya@gmail.com', '9823456789', 'Lucknow'),
+('Sneha Patel', 'sneha@gmail.com', '9812345678', 'Delhi'),
+('Arjun Verma', 'arjun@gmail.com', '9898765432', 'Pune');
+
+INSERT INTO Products (ProductName, Category, Price, StockQty) VALUES
+('Rice 5kg', 'Grocery', 450.00, 100),
+('Sugar 1kg', 'Grocery', 60.00, 200),
+('Olive Oil 1L', 'Cooking Oil', 650.00, 50),
+('Shampoo 500ml', 'Personal Care', 220.00, 80),
+('Wheat Flour 10kg', 'Grocery', 550.00, 120);
+
+INSERT INTO Suppliers (SupplierName, ContactName, Phone, City) VALUES
+('AgroMart Pvt Ltd', 'Manish Mehta', '9876500000', 'Delhi'),
+('DailyNeeds Co.', 'Ramesh Gupta', '9823000000', 'Mumbai'),
+('Organic India', 'Kavita Joshi', '9811111111', 'Lucknow'),
+('PureFarm', 'Ankit Tiwari', '9877777777', 'Delhi'),
+('FreshKart', 'Deepak Rao', '9898989898', 'Pune');
+
+-- Q7. Insert Orders
+INSERT INTO Orders (CustomerID, OrderDate, TotalAmount, Status) VALUES
+(1, '2025-11-01', 710.00, 'Delivered'),
+(2, '2025-11-02', 1250.00, 'Pending'),
+(4, '2025-10-29', 880.00, 'Delivered');
+
+-- Q8. Insert OrderItems
+INSERT INTO OrderItems (OrderID, ProductID, Quantity, SubTotal) VALUES
+(1, 1, 1, 450.00),
+(1, 2, 2, 120.00),
+(2, 3, 2, 1300.00),
+(3, 4, 2, 440.00),
+(3, 2, 1, 60.00);
+
+-- Q9. Update product stock after order
+UPDATE Products SET StockQty = StockQty - 1 WHERE ProductID = 1;
+UPDATE Products SET StockQty = StockQty - 2 WHERE ProductID = 2;
+UPDATE Products SET StockQty = StockQty - 2 WHERE ProductID = 3;
+UPDATE Products SET StockQty = StockQty - 2 WHERE ProductID = 4;
+
+-- Q10. Delete customer from Lucknow
+DELETE FROM Customers WHERE City = 'Lucknow';
+
+-- Q11. Customers from Delhi
+SELECT * FROM Customers WHERE City = 'Delhi';
+
+-- Q12. Products with price > 500
+SELECT * FROM Products WHERE Price > 500;
+
+-- Q13. Total number of customers in each city
+SELECT City, COUNT(*) AS TotalCustomers FROM Customers GROUP BY City;
+
+-- Q14. Top 3 most expensive products
+SELECT * FROM Products ORDER BY Price DESC LIMIT 3;
+
+-- Q15. Orders in last 7 days
+SELECT * FROM Orders WHERE OrderDate >= DATE_SUB(CURDATE(), INTERVAL 7 DAY);
+
+-- Q16. Customers with no orders
+SELECT * FROM Customers 
+WHERE CustomerID NOT IN (SELECT CustomerID FROM Orders);
+
+-- Q17. Product and supplier name (example join if ProductID linked to SupplierID)
+-- For demonstration, assuming mapping by city
+SELECT p.ProductName, s.SupplierName
+FROM Products p
+JOIN Suppliers s ON p.Category = 'Grocery' AND s.City = 'Delhi';
+
+-- Q18. Total sales amount per customer
+SELECT c.Name, SUM(o.TotalAmount) AS TotalSpent
+FROM Customers c
+JOIN Orders o ON c.CustomerID = o.CustomerID
+GROUP BY c.Name;
+
+-- Q19. BETWEEN
+SELECT * FROM Products WHERE Price BETWEEN 100 AND 1000;
+
+-- Q20. LIKE
+SELECT * FROM Customers WHERE Name LIKE 'S%';
+
+-- Q21. IN
+SELECT * FROM Customers WHERE City IN ('Delhi', 'Mumbai', 'Lucknow');
+
+-- Q22. GROUP BY + HAVING
+SELECT City, COUNT(*) AS TotalCustomers
+FROM Customers
+GROUP BY City
+HAVING COUNT(*) > 2;
+
+-- Q23. ORDER BY
+SELECT * FROM Products ORDER BY Price DESC;
+
+-- Q24. INNER JOIN
+SELECT o.OrderID, c.Name AS CustomerName, o.OrderDate
+FROM Orders o
+INNER JOIN Customers c ON o.CustomerID = c.CustomerID;
+
+-- Q25. LEFT JOIN
+SELECT c.Name AS CustomerName, o.OrderID, o.Status
+FROM Customers c
+LEFT JOIN Orders o ON c.CustomerID = o.CustomerID;
+
+-- Q26. RIGHT JOIN
+SELECT p.ProductName, oi.OrderItemID, oi.Quantity
+FROM Products p
+RIGHT JOIN OrderItems oi ON p.ProductID = oi.ProductID;
+
+-- Q27. Subquery: customers who ordered products above ₹1000
+SELECT DISTINCT c.Name
+FROM Customers c
+JOIN Orders o ON c.CustomerID = o.CustomerID
+WHERE o.OrderID IN (
+    SELECT OrderID FROM OrderItems WHERE SubTotal > 1000
+);
+
+-- Q28. Create view
+CREATE VIEW CustomerOrdersView AS
+SELECT c.Name AS CustomerName, o.OrderID, o.TotalAmount
+FROM Customers c
+JOIN Orders o ON c.CustomerID = o.CustomerID;
+
+-- Q29. Use view
+SELECT * FROM CustomerOrdersView WHERE TotalAmount > 5000;
+
+-- Q30. Correlated subquery
+SELECT ProductName, Price
+FROM Products p1
+WHERE Price > (SELECT AVG(Price) FROM Products p2);
+
+
+-- Q31 Built-in functions
+SELECT CURDATE() AS Today;
+SELECT UPPER(Name) AS UpperName FROM Customers;
+SELECT ProductName, ROUND(Price) AS RoundedPrice FROM Products;
+
+-- Q32 User-defined function
+DELIMITER //
+CREATE FUNCTION GetDiscountedPrice(price DECIMAL(10,2))
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    RETURN price - (price * 0.10);
+END //
+DELIMITER ;
+
+-- Q33
+DELIMITER //
+CREATE PROCEDURE GetCustomerOrders(IN cust_id INT)
+BEGIN
+    SELECT * FROM Orders WHERE CustomerID = cust_id;
+END //
+DELIMITER ;
+
+
+-- Q34
+DELIMITER //
+CREATE PROCEDURE UpdateOrderStatus(IN oid INT, IN new_status VARCHAR(30))
+BEGIN
+    UPDATE Orders SET Status = new_status WHERE OrderID = oid;
+END //
+DELIMITER ;
+
+-- Q35
+CREATE USER 'grocery_admin'@'localhost' IDENTIFIED BY 'admin123';
+GRANT SELECT, INSERT ON GroceryShopDB.* TO 'grocery_admin'@'localhost';
+FLUSH PRIVILEGES;
+
+
+
+-- Q36. Use the GetDiscountedPrice() function in a SELECT query
+SELECT 
+    ProductID,
+    ProductName,
+    Price AS OriginalPrice,
+    GetDiscountedPrice(Price) AS DiscountedPrice
+FROM Products;
+
+-- Q37. Create a function to return total number of orders by a given customer
+DELIMITER //
+CREATE FUNCTION GetTotalOrders(cust_id INT)
+RETURNS INT
+DETERMINISTIC
+BEGIN
+    DECLARE total_orders INT;
+    SELECT COUNT(*) INTO total_orders
+    FROM Orders
+    WHERE CustomerID = cust_id;
+    RETURN total_orders;
+END //
+DELIMITER ;
+
+-- Example usage:
+SELECT Name, GetTotalOrders(CustomerID) AS TotalOrders FROM Customers;
+
